@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChatApp Pro - GitHub Version</title>
+    <title>ChatApp Pro - v2.1</title>
     <style>
         :root { --primary: #0084ff; --bg: #f0f2f5; --white: #ffffff; --me: #dcf8c6; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
@@ -12,74 +12,105 @@
         .header { background: var(--primary); color: white; padding: 15px; text-align: center; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
         .logout-btn { background: rgba(255,255,255,0.2); border: none; color: white; border-radius: 5px; cursor: pointer; padding: 5px 10px; font-size: 11px; }
 
-        .screen { flex: 1; display: flex; flex-direction: column; padding: 20px; overflow-y: auto; }
+        .screen { flex: 1; display: flex; flex-direction: column; padding: 20px; overflow-y: auto; position: relative; }
         .hidden { display: none !important; }
 
         input { padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; }
-        button { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; background: var(--primary); color: white; transition: 0.2s; }
-        button:disabled { background: #ccc; }
+        button { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; background: var(--primary); color: white; transition: 0.2s; margin-top: 5px; }
+        .text-link { background: none; color: var(--primary); font-size: 13px; margin-top: 10px; text-decoration: underline; padding: 0; font-weight: normal; }
 
+        /* Contact List */
         .contact-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
         .contact-item:hover { background: #f9f9f9; }
-        .avatar { width: 40px; height: 40px; background: #0084ff; border-radius: 50%; margin-right: 12px; color: white; display: flex; align-items: center; justify-content: center; }
+        .avatar { width: 40px; height: 40px; background: #0084ff; border-radius: 50%; margin-right: 12px; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; }
 
+        /* Floating Button */
+        .fab { position: absolute; bottom: 20px; right: 20px; width: 55px; height: 55px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; border: none; }
+
+        /* Chat UI */
         #messages-area { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; background: #e5ddd5; }
-        .bubble { padding: 8px 12px; border-radius: 12px; margin-bottom: 5px; max-width: 80%; font-size: 14px; word-wrap: break-word; position: relative; }
+        .bubble { padding: 8px 12px; border-radius: 12px; margin-bottom: 5px; max-width: 80%; font-size: 14px; word-wrap: break-word; }
         .bubble.me { align-self: flex-end; background: var(--me); border-bottom-right-radius: 2px; }
         .bubble.them { align-self: flex-start; background: white; border-bottom-left-radius: 2px; }
         .chat-input-area { padding: 10px; background: white; display: flex; gap: 8px; border-top: 1px solid #ddd; }
+        .err-txt { color:red; font-size:12px; text-align:center; margin-top: 10px; }
     </style>
 </head>
 <body>
 
     <div class="app-container">
         <div id="app-header" class="header hidden">
-            <span>ChatApp v1.0</span>
+            <span id="header-user">ChatApp</span>
             <button class="logout-btn" id="btn-logout">LOGOUT</button>
         </div>
 
-        <div id="auth-screen" class="screen">
-            <h2 style="text-align:center">Login / Daftar</h2>
-            <input type="email" id="auth-email" placeholder="Email">
-            <input type="password" id="auth-pass" placeholder="Password (min 6 karakter)">
-            <button id="btn-login-exec">Masuk / Daftar Akun</button>
-            <p id="auth-error" style="color:red; font-size:12px; text-align:center"></p>
+        <div id="login-screen" class="screen">
+            <h2 style="text-align:center">Login</h2>
+            <input type="email" id="login-email" placeholder="Email">
+            <input type="password" id="login-pass" placeholder="Password">
+            <button id="btn-login-exec">Masuk</button>
+            <button id="btn-goto-reset" class="text-link">Lupa kata sandi?</button>
+            <hr style="width:100%; margin: 20px 0;">
+            <button id="btn-goto-signup" style="background:#34a853">Daftar Akun Baru</button>
+            <p id="login-error" class="err-txt"></p>
+        </div>
+
+        <div id="signup-screen" class="screen hidden">
+            <h2 style="text-align:center">Daftar Akun</h2>
+            <input type="email" id="signup-email" placeholder="Email">
+            <input type="password" id="signup-pass" placeholder="Password (min 6 karakter)">
+            <button id="btn-signup-exec">Daftar Sekarang</button>
+            <button id="btn-back-login" class="text-link">Kembali ke Login</button>
+            <p id="signup-error" class="err-txt"></p>
+        </div>
+
+        <div id="reset-screen" class="screen hidden">
+            <h2 style="text-align:center">Reset Password</h2>
+            <input type="email" id="reset-email" placeholder="Email Anda">
+            <button id="btn-reset-exec">Kirim Link Reset</button>
+            <button id="btn-reset-back" class="text-link">Batal</button>
+            <p id="reset-error" class="err-txt"></p>
         </div>
 
         <div id="setup-screen" class="screen hidden">
-            <h3>Pilih ID Unik Kamu</h3>
-            <p style="font-size:12px; color:gray">ID ini dipakai teman untuk mencari kamu.</p>
+            <h3>Set ID Kamu</h3>
             <input type="text" id="custom-username" placeholder="Contoh: danendra_ygy">
-            <button id="btn-save-profile">Simpan ID & Lanjut</button>
+            <button id="btn-save-profile">Simpan ID</button>
         </div>
 
         <div id="contact-screen" class="screen hidden">
-            <div style="display:flex; gap:5px; margin-bottom:15px;">
-                <input type="text" id="search-friend-id" placeholder="Cari ID Teman (@...)" style="flex:1">
-                <button id="btn-add-friend" style="padding:0 20px">CARI</button>
-            </div>
-            <div id="list-kontak"></div>
+            <h3 style="margin-top:0">Daftar Chat</h3>
+            <div id="list-kontak">
+                </div>
+            <button class="fab" id="btn-open-add-contact">+</button>
+        </div>
+
+        <div id="add-contact-screen" class="screen hidden">
+            <h3>Tambah Kontak</h3>
+            <p style="font-size:13px; color:gray">Masukkan ID unik teman kamu.</p>
+            <input type="text" id="search-friend-id" placeholder="ID Teman (tanpa @)">
+            <button id="btn-add-friend">Tambah Kontak</button>
+            <button id="btn-cancel-add" class="text-link">Kembali</button>
         </div>
 
         <div id="chat-screen" class="screen hidden" style="padding:0">
             <div style="background:#eee; padding:10px; font-weight:bold; display:flex; align-items:center; gap:10px">
-                <button id="btn-back" style="background:none; color:blue; width:auto; padding:5px">< Kembali</button>
+                <button id="btn-back" style="background:none; color:blue; width:auto; padding:5px">< Back</button>
                 <span id="chat-with-id">@username</span>
             </div>
             <div id="messages-area"></div>
             <div class="chat-input-area">
-                <input type="text" id="input-msg" placeholder="Ketik pesan..." style="flex:1">
-                <button id="btn-send" style="width:70px">KIRIM</button>
+                <input type="text" id="input-msg" placeholder="Ketik pesan...">
+                <button id="btn-send" style="width:70px">Kirim</button>
             </div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
         import { getDatabase, ref, set, get, push, onChildAdded, serverTimestamp, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-database.js";
 
-        // CONFIG FIREBASE (Gunakan Config Milikmu)
         const firebaseConfig = {
             apiKey: "AIzaSyAPXhs0feUYRm_KSzK3YdlKrsgFcSDRpX4",
             authDomain: "chattingapp-8734b.firebaseapp.com",
@@ -97,12 +128,17 @@
         let myData = null;
         let activeRoomId = null;
 
-        // 1. MONITOR AUTH
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        }
+
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 const snap = await get(ref(db, 'users/' + user.uid));
                 if (snap.exists()) {
                     myData = snap.val();
+                    document.getElementById('header-user').innerText = "@" + myData.username;
                     showScreen('contact-screen');
                     loadMyContacts();
                 } else {
@@ -110,49 +146,65 @@
                 }
                 document.getElementById('app-header').classList.remove('hidden');
             } else {
-                showScreen('auth-screen');
+                showScreen('login-screen');
                 document.getElementById('app-header').classList.add('hidden');
             }
         });
 
-        // 2. LOGIN & SIGNUP
+        // --- AUTH ---
         document.getElementById('btn-login-exec').onclick = async () => {
-            const email = document.getElementById('auth-email').value;
-            const pass = document.getElementById('auth-pass').value;
-            const err = document.getElementById('auth-error');
-            err.innerText = "";
-            try {
-                await signInWithEmailAndPassword(auth, email, pass);
-            } catch (e) {
-                try { await createUserWithEmailAndPassword(auth, email, pass); }
-                catch (e2) { err.innerText = e2.message; }
-            }
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-pass').value;
+            try { await signInWithEmailAndPassword(auth, email, pass); } 
+            catch (e) { document.getElementById('login-error').innerText = e.message; }
         };
 
-        // 3. SAVE PROFILE (USERNAME)
+        document.getElementById('btn-signup-exec').onclick = async () => {
+            const email = document.getElementById('signup-email').value;
+            const pass = document.getElementById('signup-pass').value;
+            try { await createUserWithEmailAndPassword(auth, email, pass); } 
+            catch (e) { document.getElementById('signup-error').innerText = e.message; }
+        };
+
+        document.getElementById('btn-reset-exec').onclick = async () => {
+            const email = document.getElementById('reset-email').value;
+            try {
+                await sendPasswordResetEmail(auth, email);
+                alert("Link dikirim ke email!");
+                showScreen('login-screen');
+            } catch (e) { document.getElementById('reset-error').innerText = e.message; }
+        };
+
+        // --- NAV ---
+        document.getElementById('btn-goto-signup').onclick = () => showScreen('signup-screen');
+        document.getElementById('btn-back-login').onclick = () => showScreen('login-screen');
+        document.getElementById('btn-goto-reset').onclick = () => showScreen('reset-screen');
+        document.getElementById('btn-reset-back').onclick = () => showScreen('login-screen');
+        document.getElementById('btn-open-add-contact').onclick = () => showScreen('add-contact-screen');
+        document.getElementById('btn-cancel-add').onclick = () => showScreen('contact-screen');
+
+        // --- PROFILE ---
         document.getElementById('btn-save-profile').onclick = async () => {
             const userIn = document.getElementById('custom-username').value.trim().toLowerCase();
-            if(userIn.length < 3) return alert("ID terlalu pendek!");
-
+            if(userIn.length < 3) return alert("ID minimal 3 karakter!");
             const q = query(ref(db, 'users'), orderByChild('username'), equalTo(userIn));
             const snap = await get(q);
-            if(snap.exists()) return alert("ID sudah dipakai!");
-
+            if(snap.exists()) return alert("ID sudah digunakan!");
             myData = { uid: auth.currentUser.uid, username: userIn, email: auth.currentUser.email };
             await set(ref(db, 'users/' + auth.currentUser.uid), myData);
             location.reload(); 
         };
 
-        // 4. CONTACTS
+        // --- CONTACTS ---
         document.getElementById('btn-add-friend').onclick = async () => {
             const target = document.getElementById('search-friend-id').value.trim().toLowerCase();
             const q = query(ref(db, 'users'), orderByChild('username'), equalTo(target));
             const snap = await get(q);
-
             if(snap.exists()) {
                 const friend = Object.values(snap.val())[0];
-                if(friend.uid === myData.uid) return alert("Itu ID kamu sendiri!");
+                if(friend.uid === myData.uid) return alert("Itu ID Anda sendiri!");
                 await set(ref(db, `contacts/${myData.uid}/${friend.uid}`), friend);
+                showScreen('contact-screen');
                 loadMyContacts();
                 document.getElementById('search-friend-id').value = "";
             } else { alert("ID tidak ditemukan!"); }
@@ -170,15 +222,15 @@
                     div.onclick = () => startChat(friend);
                     list.appendChild(div);
                 });
+            } else {
+                list.innerHTML = "<p style='text-align:center; color:gray; margin-top:20px'>Belum ada chat. Klik + untuk menambah teman.</p>";
             }
         }
 
-        // 5. CHAT LOGIC
         function startChat(friend) {
             activeRoomId = myData.uid < friend.uid ? myData.uid+"_"+friend.uid : friend.uid+"_"+myData.uid;
             showScreen('chat-screen');
             document.getElementById('chat-with-id').innerText = "@" + friend.username;
-            
             const area = document.getElementById('messages-area');
             area.innerHTML = "";
             onChildAdded(ref(db, 'messages/' + activeRoomId), (snap) => {
@@ -194,19 +246,10 @@
         document.getElementById('btn-send').onclick = async () => {
             const inp = document.getElementById('input-msg');
             if(!inp.value || !activeRoomId) return;
-            await push(ref(db, 'messages/' + activeRoomId), {
-                sender: myData.uid,
-                text: inp.value,
-                time: serverTimestamp()
-            });
+            await push(ref(db, 'messages/' + activeRoomId), { sender: myData.uid, text: inp.value, time: serverTimestamp() });
             inp.value = "";
         };
 
-        // NAV & LOGOUT
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
-        }
         document.getElementById('btn-back').onclick = () => location.reload();
         document.getElementById('btn-logout').onclick = () => signOut(auth);
     </script>
