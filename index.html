@@ -25,11 +25,31 @@
         .text-link { background: none; color: var(--primary); font-size: 13px; margin-top: 10px; text-decoration: underline; padding: 0; font-weight: normal; }
 
         /* Contacts */
-        .contact-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; position: relative; }
+        #list-kontak { display: flex; flex-direction: column; }
+        .contact-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s; order: 999; }
         .contact-item:hover { background: #f9f9f9; }
         .avatar { width: 40px; height: 40px; background: var(--primary); border-radius: 50%; margin-right: 12px; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; }
-        .contact-info { display: flex; flex-direction: column; flex: 1; }
-        .last-msg { font-size: 12px; color: #777; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px; }
+        .contact-info { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+        
+        .last-msg { font-size: 12px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; transition: 0.3s; }
+        .last-msg.is-unread { font-weight: 800; color: #000; }
+
+        /* UNREAD BADGE STYLE */
+        .unread-badge { 
+            background-color: var(--primary); 
+            color: white; 
+            font-size: 11px; 
+            font-weight: bold; 
+            min-width: 20px; 
+            height: 20px; 
+            border-radius: 10px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 0 6px;
+            margin-left: 10px;
+        }
+        .badge-hidden { display: none; }
 
         /* Floating Button */
         .fab { position: absolute; bottom: 20px; right: 20px; width: 55px; height: 55px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; border: none; }
@@ -41,10 +61,9 @@
         .bubble.me { align-self: flex-end; background: var(--me); border-bottom-right-radius: 2px; }
         .bubble.them { align-self: flex-start; background: white; border-bottom-left-radius: 2px; }
         
-        /* Status Read/Unread Indicators */
         .status-dot { position: absolute; bottom: 4px; right: 8px; width: 8px; height: 8px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); }
-        .unread { background-color: #ff3b30; } /* Merah */
-        .read { background-color: #ffffff; }   /* Putih/Kosong */
+        .unread { background-color: #ff3b30; } 
+        .read { background-color: #ffffff; }
 
         .chat-input-area { padding: 10px; background: white; display: flex; align-items: center; gap: 8px; border-top: 1px solid #ddd; }
         #input-msg { flex: 1; margin: 0; border-radius: 20px; padding: 10px 15px; }
@@ -94,10 +113,8 @@
 
         <div id="setup-screen" class="screen hidden">
             <h3 id="setup-title">Set ID Kamu</h3>
-            <p style="font-size: 13px; color: gray;">ID unik ini digunakan untuk mencari teman.</p>
             <input type="text" id="custom-username" placeholder="Contoh: budi_chat">
             <button id="btn-save-profile">Simpan Profil</button>
-            <button id="btn-cancel-profile" class="text-link hidden">Batal</button>
         </div>
 
         <div id="contact-screen" class="screen hidden">
@@ -153,7 +170,6 @@
             document.getElementById(id).classList.remove('hidden');
         }
 
-        // --- AUTH MONITOR ---
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 const snap = await get(ref(db, 'users/' + user.uid));
@@ -162,10 +178,7 @@
                     document.getElementById('header-user').innerText = "@" + myData.username;
                     showScreen('contact-screen');
                     loadMyContacts();
-                } else {
-                    document.getElementById('setup-title').innerText = "Set ID Kamu";
-                    showScreen('setup-screen');
-                }
+                } else { showScreen('setup-screen'); }
                 document.getElementById('app-header').classList.remove('hidden');
             } else {
                 showScreen('login-screen');
@@ -173,77 +186,21 @@
             }
         });
 
-        // --- AUTH ACTIONS ---
+        // --- AUTH & PROFILE (Singkat) ---
         document.getElementById('btn-login-exec').onclick = async () => {
             const email = document.getElementById('login-email').value;
             const pass = document.getElementById('login-pass').value;
-            const err = document.getElementById('login-error');
-            try { 
-                err.innerText = "Mencoba masuk...";
-                await signInWithEmailAndPassword(auth, email, pass); 
-            } catch (e) { err.innerText = "Gagal: " + e.message; }
+            try { await signInWithEmailAndPassword(auth, email, pass); } catch (e) { document.getElementById('login-error').innerText = e.message; }
         };
-
-        document.getElementById('btn-signup-exec').onclick = async () => {
-            const email = document.getElementById('signup-email').value;
-            const pass = document.getElementById('signup-pass').value;
-            try { await createUserWithEmailAndPassword(auth, email, pass); } 
-            catch (e) { document.getElementById('signup-error').innerText = e.message; }
-        };
-
-        document.getElementById('btn-reset-exec').onclick = async () => {
-            const email = document.getElementById('reset-email').value;
-            try {
-                await sendPasswordResetEmail(auth, email);
-                alert("Link reset dikirim ke email!");
-                showScreen('login-screen');
-            } catch (e) { document.getElementById('reset-error').innerText = e.message; }
-        };
-
         document.getElementById('btn-logout').onclick = () => signOut(auth);
-
-        // --- PROFILE LOGIC ---
-        document.getElementById('btn-open-profile').onclick = () => {
-            document.getElementById('setup-title').innerText = "Edit Profil";
-            document.getElementById('custom-username').value = myData.username;
-            document.getElementById('btn-cancel-profile').classList.remove('hidden');
-            showScreen('setup-screen');
-        };
-
-        document.getElementById('btn-cancel-profile').onclick = () => showScreen('contact-screen');
-
         document.getElementById('btn-save-profile').onclick = async () => {
             const userIn = document.getElementById('custom-username').value.trim().toLowerCase();
-            if(userIn.length < 3) return alert("ID minimal 3 karakter!");
-            if(myData && myData.username === userIn) return showScreen('contact-screen');
-            const q = query(ref(db, 'users'), orderByChild('username'), equalTo(userIn));
-            const snap = await get(q);
-            if(snap.exists()) return alert("ID ini sudah ada yang punya!");
-            const updatedData = { uid: auth.currentUser.uid, username: userIn, email: auth.currentUser.email };
-            await set(ref(db, 'users/' + auth.currentUser.uid), updatedData);
-            myData = updatedData;
-            document.getElementById('header-user').innerText = "@" + myData.username;
-            alert("Berhasil simpan!");
+            myData = { uid: auth.currentUser.uid, username: userIn, email: auth.currentUser.email };
+            await set(ref(db, 'users/' + auth.currentUser.uid), myData);
             showScreen('contact-screen');
         };
 
-        // --- CONTACTS & LAST CHAT ---
-        document.getElementById('btn-open-add-contact').onclick = () => showScreen('add-contact-screen');
-        document.getElementById('btn-cancel-add').onclick = () => showScreen('contact-screen');
-
-        document.getElementById('btn-add-friend').onclick = async () => {
-            const target = document.getElementById('search-friend-id').value.trim().toLowerCase();
-            const q = query(ref(db, 'users'), orderByChild('username'), equalTo(target));
-            const snap = await get(q);
-            if(snap.exists()) {
-                const friend = Object.values(snap.val())[0];
-                if(friend.uid === myData.uid) return alert("Gabisa tambah diri sendiri!");
-                await set(ref(db, `contacts/${myData.uid}/${friend.uid}`), friend);
-                showScreen('contact-screen');
-                loadMyContacts();
-            } else { alert("ID tidak ditemukan!"); }
-        };
-
+        // --- CONTACTS LOGIC DENGAN UNREAD BADGE ---
         async function loadMyContacts() {
             const list = document.getElementById('list-kontak');
             onValue(ref(db, 'contacts/' + myData.uid), (snap) => {
@@ -251,6 +208,7 @@
                 if(snap.exists()) {
                     Object.values(snap.val()).forEach(friend => {
                         const roomId = myData.uid < friend.uid ? myData.uid+"_"+friend.uid : friend.uid+"_"+myData.uid;
+                        
                         const div = document.createElement('div');
                         div.className = 'contact-item';
                         div.id = 'contact-' + friend.uid;
@@ -258,25 +216,44 @@
                             <div class="avatar">${friend.username[0].toUpperCase()}</div>
                             <div class="contact-info">
                                 <b>@${friend.username}</b>
-                                <span class="last-msg" id="last-msg-${roomId}">Memuat pesan...</span>
+                                <span class="last-msg" id="last-msg-${roomId}">Belum ada pesan</span>
                             </div>
+                            <div class="unread-badge badge-hidden" id="badge-${roomId}">0</div>
                         `;
                         div.onclick = () => startChat(friend);
                         list.appendChild(div);
 
-                        // Listen to Last Chat
-                        const lastMsgQuery = query(ref(db, 'messages/' + roomId), limitToLast(1));
-                        onValue(lastMsgQuery, (mSnap) => {
+                        // Listen to ALL messages in room to count unread
+                        onValue(ref(db, 'messages/' + roomId), (mSnap) => {
                             const lastMsgEl = document.getElementById('last-msg-' + roomId);
+                            const badgeEl = document.getElementById('badge-' + roomId);
+                            const contactDiv = document.getElementById('contact-' + friend.uid);
+                            
                             if(mSnap.exists()) {
-                                const msgData = Object.values(mSnap.val())[0];
-                                lastMsgEl.innerText = msgData.text;
-                            } else {
-                                lastMsgEl.innerText = "Belum ada chat";
+                                const allMsgs = Object.values(mSnap.val());
+                                const lastMsgData = allMsgs[allMsgs.length - 1];
+                                
+                                // 1. Update Teks Pesan Terakhir
+                                lastMsgEl.innerText = lastMsgData.text;
+
+                                // 2. Hitung Pesan Unread dari Lawan Bicara
+                                const unreadCount = allMsgs.filter(m => m.sender !== myData.uid && m.status === 'unread').length;
+                                
+                                if(unreadCount > 0) {
+                                    badgeEl.innerText = unreadCount;
+                                    badgeEl.classList.remove('badge-hidden');
+                                    lastMsgEl.classList.add('is-unread');
+                                } else {
+                                    badgeEl.classList.add('badge-hidden');
+                                    lastMsgEl.classList.remove('is-unread');
+                                }
+
+                                // 3. Sorting Berdasarkan Waktu Terakhir
+                                if(lastMsgData.time) contactDiv.style.order = -lastMsgData.time;
                             }
                         });
                     });
-                } else { list.innerHTML = "<p style='text-align:center; color:gray; margin-top:20px'>Kontak kosong.</p>"; }
+                }
             });
         }
 
@@ -291,74 +268,55 @@
             const msgRef = ref(db, 'messages/' + activeRoomId);
             off(msgRef);
 
-            // Listen pesan baru
             onChildAdded(msgRef, (snap) => {
                 const m = snap.val();
-                const msgId = snap.key;
-                
                 if(m.sender !== myData.uid && m.status === 'unread') {
-                    update(ref(db, `messages/${activeRoomId}/${msgId}`), { status: 'read' });
+                    update(ref(db, `messages/${activeRoomId}/${snap.key}`), { status: 'read' });
                 }
 
                 const div = document.createElement('div');
                 div.className = `bubble ${m.sender === myData.uid ? 'me' : 'them'}`;
-                div.id = 'msg-' + msgId;
-                div.innerHTML = `
-                    ${m.text}
-                    <div class="status-dot ${m.status === 'read' ? 'read' : 'unread'}" id="status-${msgId}"></div>
-                `;
-                
-                // Fitur Hapus Chat saat Klik Bubble
-                div.onclick = async () => {
-                    if(confirm("Hapus pesan ini untuk semua orang?")) {
-                        await remove(ref(db, `messages/${activeRoomId}/${msgId}`));
-                    }
-                };
-
+                div.id = 'msg-' + snap.key;
+                div.innerHTML = `${m.text}<div class="status-dot ${m.status === 'read' ? 'read' : 'unread'}" id="status-${snap.key}"></div>`;
                 area.appendChild(div);
                 area.scrollTop = area.scrollHeight;
 
-                onValue(ref(db, `messages/${activeRoomId}/${msgId}/status`), (sSnap) => {
-                    const dot = document.getElementById('status-' + msgId);
-                    if(dot) {
-                        dot.className = `status-dot ${sSnap.val() === 'read' ? 'read' : 'unread'}`;
-                    }
+                onValue(ref(db, `messages/${activeRoomId}/${snap.key}/status`), (sSnap) => {
+                    const dot = document.getElementById('status-' + snap.key);
+                    if(dot) dot.className = `status-dot ${sSnap.val() === 'read' ? 'read' : 'unread'}`;
                 });
-            });
-
-            // Listen jika ada pesan dihapus dari database
-            onChildRemoved(msgRef, (snap) => {
-                const deletedDiv = document.getElementById('msg-' + snap.key);
-                if(deletedDiv) deletedDiv.remove();
             });
         }
 
         const sendMessage = async () => {
             const inp = document.getElementById('input-msg');
-            const text = inp.value.trim();
-            if(!text || !activeRoomId) return;
+            if(!inp.value.trim()) return;
             await push(ref(db, 'messages/' + activeRoomId), { 
-                sender: myData.uid, 
-                text: text, 
-                time: serverTimestamp(),
-                status: 'unread' 
+                sender: myData.uid, text: inp.value.trim(), 
+                time: serverTimestamp(), status: 'unread' 
             });
             inp.value = "";
-            inp.focus();
         };
 
         document.getElementById('btn-send').onclick = sendMessage;
         document.getElementById('input-msg').onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
-        document.getElementById('btn-back').onclick = () => {
-            if(activeRoomId) off(ref(db, 'messages/' + activeRoomId));
-            showScreen('contact-screen');
+        document.getElementById('btn-back').onclick = () => showScreen('contact-screen');
+        
+        document.getElementById('btn-add-friend').onclick = async () => {
+            const target = document.getElementById('search-friend-id').value.trim().toLowerCase();
+            const q = query(ref(db, 'users'), orderByChild('username'), equalTo(target));
+            const snap = await get(q);
+            if(snap.exists()) {
+                const friend = Object.values(snap.val())[0];
+                await set(ref(db, `contacts/${myData.uid}/${friend.uid}`), friend);
+                showScreen('contact-screen');
+            } else { alert("ID tidak ditemukan!"); }
         };
 
-        // --- NAVIGATION ---
         document.getElementById('btn-goto-signup').onclick = () => showScreen('signup-screen');
         document.getElementById('btn-back-login').onclick = () => showScreen('login-screen');
-        document.getElementById('btn-goto-reset').onclick = () => showScreen('login-screen');
-        document.getElementById('btn-reset-back').onclick = () => showScreen('login-screen');
+        document.getElementById('btn-open-add-contact').onclick = () => showScreen('add-contact-screen');
+        document.getElementById('btn-cancel-add').onclick = () => showScreen('contact-screen');
     </script>
 </body>
 </html>
