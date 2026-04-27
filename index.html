@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatApp Pro - GitHub Version</title>
+    <style>
+        :root { --primary: #0084ff; --bg: #f0f2f5; --white: #ffffff; --me: #dcf8c6; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .app-container { width: 100%; max-width: 450px; height: 95vh; background: var(--white); box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; border-radius: 15px; overflow: hidden; position: relative; }
+        
+        .header { background: var(--primary); color: white; padding: 15px; text-align: center; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        .logout-btn { background: rgba(255,255,255,0.2); border: none; color: white; border-radius: 5px; cursor: pointer; padding: 5px 10px; font-size: 11px; }
+
+        .screen { flex: 1; display: flex; flex-direction: column; padding: 20px; overflow-y: auto; }
+        .hidden { display: none !important; }
+
+        input { padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; }
+        button { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; background: var(--primary); color: white; transition: 0.2s; }
+        button:disabled { background: #ccc; }
+
+        .contact-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .contact-item:hover { background: #f9f9f9; }
+        .avatar { width: 40px; height: 40px; background: #0084ff; border-radius: 50%; margin-right: 12px; color: white; display: flex; align-items: center; justify-content: center; }
+
+        #messages-area { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; background: #e5ddd5; }
+        .bubble { padding: 8px 12px; border-radius: 12px; margin-bottom: 5px; max-width: 80%; font-size: 14px; word-wrap: break-word; position: relative; }
+        .bubble.me { align-self: flex-end; background: var(--me); border-bottom-right-radius: 2px; }
+        .bubble.them { align-self: flex-start; background: white; border-bottom-left-radius: 2px; }
+        .chat-input-area { padding: 10px; background: white; display: flex; gap: 8px; border-top: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div id="app-header" class="header hidden">
+            <span>ChatApp v1.0</span>
+            <button class="logout-btn" id="btn-logout">LOGOUT</button>
+        </div>
+
+        <div id="auth-screen" class="screen">
+            <h2 style="text-align:center">Login / Daftar</h2>
+            <input type="email" id="auth-email" placeholder="Email">
+            <input type="password" id="auth-pass" placeholder="Password (min 6 karakter)">
+            <button id="btn-login-exec">Masuk / Daftar Akun</button>
+            <p id="auth-error" style="color:red; font-size:12px; text-align:center"></p>
+        </div>
+
+        <div id="setup-screen" class="screen hidden">
+            <h3>Pilih ID Unik Kamu</h3>
+            <p style="font-size:12px; color:gray">ID ini dipakai teman untuk mencari kamu.</p>
+            <input type="text" id="custom-username" placeholder="Contoh: danendra_ygy">
+            <button id="btn-save-profile">Simpan ID & Lanjut</button>
+        </div>
+
+        <div id="contact-screen" class="screen hidden">
+            <div style="display:flex; gap:5px; margin-bottom:15px;">
+                <input type="text" id="search-friend-id" placeholder="Cari ID Teman (@...)" style="flex:1">
+                <button id="btn-add-friend" style="padding:0 20px">CARI</button>
+            </div>
+            <div id="list-kontak"></div>
+        </div>
+
+        <div id="chat-screen" class="screen hidden" style="padding:0">
+            <div style="background:#eee; padding:10px; font-weight:bold; display:flex; align-items:center; gap:10px">
+                <button id="btn-back" style="background:none; color:blue; width:auto; padding:5px">< Kembali</button>
+                <span id="chat-with-id">@username</span>
+            </div>
+            <div id="messages-area"></div>
+            <div class="chat-input-area">
+                <input type="text" id="input-msg" placeholder="Ketik pesan..." style="flex:1">
+                <button id="btn-send" style="width:70px">KIRIM</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
+        import { getDatabase, ref, set, get, push, onChildAdded, serverTimestamp, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-database.js";
+
+        // CONFIG FIREBASE (Gunakan Config Milikmu)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAPXhs0feUYRm_KSzK3YdlKrsgFcSDRpX4",
+            authDomain: "chattingapp-8734b.firebaseapp.com",
+            databaseURL: "https://chattingapp-8734b-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "chattingapp-8734b",
+            storageBucket: "chattingapp-8734b.firebasestorage.app",
+            messagingSenderId: "811918487671",
+            appId: "1:811918487671:web:060e9b245e843410525672"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        let myData = null;
+        let activeRoomId = null;
+
+        // 1. MONITOR AUTH
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const snap = await get(ref(db, 'users/' + user.uid));
+                if (snap.exists()) {
+                    myData = snap.val();
+                    showScreen('contact-screen');
+                    loadMyContacts();
+                } else {
+                    showScreen('setup-screen');
+                }
+                document.getElementById('app-header').classList.remove('hidden');
+            } else {
+                showScreen('auth-screen');
+                document.getElementById('app-header').classList.add('hidden');
+            }
+        });
+
+        // 2. LOGIN & SIGNUP
+        document.getElementById('btn-login-exec').onclick = async () => {
+            const email = document.getElementById('auth-email').value;
+            const pass = document.getElementById('auth-pass').value;
+            const err = document.getElementById('auth-error');
+            err.innerText = "";
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+            } catch (e) {
+                try { await createUserWithEmailAndPassword(auth, email, pass); }
+                catch (e2) { err.innerText = e2.message; }
+            }
+        };
+
+        // 3. SAVE PROFILE (USERNAME)
+        document.getElementById('btn-save-profile').onclick = async () => {
+            const userIn = document.getElementById('custom-username').value.trim().toLowerCase();
+            if(userIn.length < 3) return alert("ID terlalu pendek!");
+
+            const q = query(ref(db, 'users'), orderByChild('username'), equalTo(userIn));
+            const snap = await get(q);
+            if(snap.exists()) return alert("ID sudah dipakai!");
+
+            myData = { uid: auth.currentUser.uid, username: userIn, email: auth.currentUser.email };
+            await set(ref(db, 'users/' + auth.currentUser.uid), myData);
+            location.reload(); 
+        };
+
+        // 4. CONTACTS
+        document.getElementById('btn-add-friend').onclick = async () => {
+            const target = document.getElementById('search-friend-id').value.trim().toLowerCase();
+            const q = query(ref(db, 'users'), orderByChild('username'), equalTo(target));
+            const snap = await get(q);
+
+            if(snap.exists()) {
+                const friend = Object.values(snap.val())[0];
+                if(friend.uid === myData.uid) return alert("Itu ID kamu sendiri!");
+                await set(ref(db, `contacts/${myData.uid}/${friend.uid}`), friend);
+                loadMyContacts();
+                document.getElementById('search-friend-id').value = "";
+            } else { alert("ID tidak ditemukan!"); }
+        };
+
+        async function loadMyContacts() {
+            const list = document.getElementById('list-kontak');
+            list.innerHTML = "";
+            const snap = await get(ref(db, 'contacts/' + myData.uid));
+            if(snap.exists()) {
+                Object.values(snap.val()).forEach(friend => {
+                    const div = document.createElement('div');
+                    div.className = 'contact-item';
+                    div.innerHTML = `<div class="avatar">${friend.username[0].toUpperCase()}</div><b>@${friend.username}</b>`;
+                    div.onclick = () => startChat(friend);
+                    list.appendChild(div);
+                });
+            }
+        }
+
+        // 5. CHAT LOGIC
+        function startChat(friend) {
+            activeRoomId = myData.uid < friend.uid ? myData.uid+"_"+friend.uid : friend.uid+"_"+myData.uid;
+            showScreen('chat-screen');
+            document.getElementById('chat-with-id').innerText = "@" + friend.username;
+            
+            const area = document.getElementById('messages-area');
+            area.innerHTML = "";
+            onChildAdded(ref(db, 'messages/' + activeRoomId), (snap) => {
+                const m = snap.val();
+                const div = document.createElement('div');
+                div.className = `bubble ${m.sender === myData.uid ? 'me' : 'them'}`;
+                div.innerText = m.text;
+                area.appendChild(div);
+                area.scrollTop = area.scrollHeight;
+            });
+        }
+
+        document.getElementById('btn-send').onclick = async () => {
+            const inp = document.getElementById('input-msg');
+            if(!inp.value || !activeRoomId) return;
+            await push(ref(db, 'messages/' + activeRoomId), {
+                sender: myData.uid,
+                text: inp.value,
+                time: serverTimestamp()
+            });
+            inp.value = "";
+        };
+
+        // NAV & LOGOUT
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        }
+        document.getElementById('btn-back').onclick = () => location.reload();
+        document.getElementById('btn-logout').onclick = () => signOut(auth);
+    </script>
+</body>
+</html>
