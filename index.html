@@ -164,51 +164,54 @@
     function loadMyContacts() {
         const list = document.getElementById('list-kontak');
         onValue(ref(db, 'contacts/' + myData.uid), (snap) => {
-            list.innerHTML = "";
-            if(!snap.exists()) return;
+            if(!snap.exists()) {
+                list.innerHTML = "";
+                return;
+            }
             
-            Object.values(snap.val()).forEach(friend => {
+            const friends = snap.val();
+            Object.values(friends).forEach(friend => {
                 const roomId = myData.uid < friend.uid ? myData.uid+"_"+friend.uid : friend.uid+"_"+myData.uid;
-                const div = document.createElement('div');
-                div.className = 'contact-item';
-                div.id = 'contact-item-' + roomId;
-                div.innerHTML = `
-                    <div class="avatar">${friend.username[0].toUpperCase()}</div>
-                    <div class="contact-info">
-                        <b>${friend.username}</b>
-                        <span class="last-msg" id="last-msg-${roomId}">Memuat pesan...</span>
-                    </div>
-                    <div class="unread-badge hidden" id="badge-${roomId}">0</div>
-                `;
-                div.onclick = () => startChat(friend);
-                list.appendChild(div);
+                
+                // Cari atau buat element kontak
+                let div = document.getElementById('contact-item-' + roomId);
+                if (!div) {
+                    div = document.createElement('div');
+                    div.className = 'contact-item';
+                    div.id = 'contact-item-' + roomId;
+                    div.onclick = () => startChat(friend);
+                    list.appendChild(div);
+                }
 
-                // DITEKANKAN: Selalu ambil pesan terakhir secara real-time
+                // DITEKANKAN: Listener real-time per room chat
                 onValue(ref(db, 'messages/' + roomId), (mSnap) => {
                     if(mSnap.exists()) {
                         const msgs = Object.values(mSnap.val());
                         const lastMsg = msgs[msgs.length - 1];
-                        
-                        // Prefiks "Anda: " jika kita pengirimnya, jika bukan tampilkan langsung
                         const prefix = lastMsg.sender === myData.uid ? "Anda: " : "";
-                        const lastMsgElement = document.getElementById('last-msg-' + roomId);
-                        if(lastMsgElement) lastMsgElement.innerText = prefix + lastMsg.text;
-
-                        // Hitung unread
-                        const unreads = msgs.filter(v => v.sender !== myData.uid && v.status === 'unread');
-                        const b = document.getElementById('badge-' + roomId);
-                        if(b) {
-                            if(unreads.length > 0) {
-                                b.innerText = unreads.length;
-                                b.classList.remove('hidden');
-                            } else {
-                                b.classList.add('hidden');
-                            }
-                        }
                         
-                        // Re-order: pindahkan yang ada chat terbaru ke atas
-                        const item = document.getElementById('contact-item-' + roomId);
-                        if(item) list.prepend(item);
+                        const unreads = msgs.filter(v => v.sender !== myData.uid && v.status === 'unread').length;
+
+                        div.innerHTML = `
+                            <div class="avatar">${friend.username[0].toUpperCase()}</div>
+                            <div class="contact-info">
+                                <b>${friend.username}</b>
+                                <span class="last-msg">${prefix + lastMsg.text}</span>
+                            </div>
+                            <div class="unread-badge ${unreads > 0 ? '' : 'hidden'}">${unreads}</div>
+                        `;
+                        
+                        // Pindahkan ke urutan paling atas setiap ada update pesan
+                        list.prepend(div);
+                    } else {
+                        div.innerHTML = `
+                            <div class="avatar">${friend.username[0].toUpperCase()}</div>
+                            <div class="contact-info">
+                                <b>${friend.username}</b>
+                                <span class="last-msg">Belum ada pesan</span>
+                            </div>
+                            <div class="unread-badge hidden">0</div>
+                        `;
                     }
                 });
             });
