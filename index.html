@@ -3,153 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ChatApp Pro - v2.6</title>
+    <title>ChatApp Pro - v2.8</title>
     <style>
         * { box-sizing: border-box; }
         :root { --primary: #0084ff; --bg: #f0f2f5; --white: #ffffff; --me: #dcf8c6; }
         
-        body { 
-            font-family: 'Segoe UI', Tahoma, sans-serif; 
-            background: var(--bg); 
-            margin: 0; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh;
-        }
-
-        .app-container { 
-            width: 100%; 
-            max-width: 450px; 
-            height: 100vh;
-            background: var(--white); 
-            display: flex; 
-            flex-direction: column; 
-            position: relative; 
-            overflow: hidden;
-        }
-
-        @media (min-width: 451px) {
-            .app-container { height: 92vh; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .app-container { width: 100%; max-width: 450px; height: 100vh; background: var(--white); display: flex; flex-direction: column; position: relative; overflow: hidden; }
+        @media (min-width: 451px) { .app-container { height: 92vh; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); } }
 
         .header { background: var(--primary); color: white; padding: 12px 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; z-index: 10; flex-shrink: 0; }
-        .header-left { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-        .profile-icon { font-size: 20px; background: rgba(255,255,255,0.2); padding: 5px 8px; border-radius: 50%; }
-        .logout-btn { background: rgba(255,255,255,0.2); border: none; color: white; border-radius: 2px; cursor: pointer; padding: 5px 10px; font-size: 8px; }
+        .header-left { display: flex; align-items: center; gap: 10px; }
+        .logout-btn { background: rgba(255,255,255,0.2); border: none; color: white; border-radius: 4px; cursor: pointer; padding: 5px 10px; font-size: 10px; }
 
         .screen { flex: 1; display: flex; flex-direction: column; padding: 20px; overflow-y: auto; position: relative; }
         .hidden { display: none !important; }
 
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; outline: none; }
-        button { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; background: var(--primary); color: white; transition: 0.2s; margin-top: 5px; }
-        button:active { transform: scale(0.98); }
-        .text-link { background: none; color: var(--primary); font-size: 13px; margin-top: 10px; text-decoration: underline; padding: 0; font-weight: normal; width: auto; display: inline-block; }
-
-        #list-kontak { display: flex; flex-direction: column; }
-        .contact-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s; order: 999; }
-        .contact-item:hover { background: #f9f9f9; }
-        .avatar { width: 45px; height: 45px; background: var(--primary); border-radius: 50%; margin-right: 12px; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; }
-        .contact-info { display: flex; flex-direction: column; flex: 1; min-width: 0; }
-        .last-msg { font-size: 13px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .last-msg.is-unread { font-weight: 800; color: #000; }
-        .unread-badge { background: #25d366; color: white; font-size: 11px; font-weight: bold; min-width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 2px; margin-left: 10px; flex-shrink: 0; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; outline: none; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; background: var(--primary); color: white; }
+        
+        #list-kontak { display: flex; flex-direction: column; gap: 2px; }
+        .contact-item { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: 0.2s; background: white; }
+        .contact-item:hover { background: #f7f9fb; }
+        .avatar { width: 48px; height: 48px; background: #ddd; border-radius: 50%; margin-right: 12px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; flex-shrink: 0; }
+        
+        .contact-info { flex: 1; min-width: 0; }
+        .contact-info b { display: block; font-size: 15px; margin-bottom: 2px; }
+        .last-msg { font-size: 13px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+        
+        .is-unread .last-msg { font-weight: 800; color: #000; }
+        .unread-badge { background: #25d366; color: white; font-size: 11px; font-weight: bold; padding: 2px 7px; border-radius: 10px; margin-left: 10px; }
         .badge-hidden { display: none; }
 
-        .fab { position: absolute; bottom: 20px; right: 20px; width: 55px; height: 55px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; border: none; }
-
-        #messages-area { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; background: #e5ddd5; word-break: break-word; }
-        .bubble { padding: 8px 12px; border-radius: 12px; margin-bottom: 5px; max-width: 80%; font-size: 15px; position: relative; padding-bottom: 18px; }
+        #messages-area { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; background: #e5ddd5; }
+        .bubble { padding: 8px 12px 20px 12px; border-radius: 12px; margin-bottom: 4px; max-width: 80%; font-size: 15px; position: relative; word-wrap: break-word; }
         .bubble.me { align-self: flex-end; background: var(--me); border-bottom-right-radius: 2px; }
         .bubble.them { align-self: flex-start; background: white; border-bottom-left-radius: 2px; }
-        .status-dot { position: absolute; bottom: 4px; right: 8px; width: 8px; height: 8px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); }
-        .unread { background-color: #ccc; } 
-        .read { background-color: var(--primary); }
-
-        .chat-input-area { padding: 10px 15px; background: white; display: flex; align-items: center; gap: 8px; border-top: 1px solid #ddd; padding-bottom: env(safe-area-inset-bottom, 10px); }
-        #input-msg { flex: 1; margin: 0; border-radius: 25px; padding: 10px 15px; background: #f0f2f5; border: none; }
-        #btn-send { width: 45px; height: 45px; margin: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
         
-        .err-txt { color:red; font-size:12px; text-align:center; margin-top: 10px; min-height: 15px; }
-        .success-txt { color: green; font-size: 12px; text-align: center; margin-top: 10px; }
+        /* Indikator Status di Bubble */
+        .status-mark { position: absolute; bottom: 4px; right: 8px; font-size: 10px; font-weight: bold; }
+        .status-mark.unread { color: #888; } /* Abu-abu */
+        .status-mark.read { color: #0084ff; } /* Biru */
+
+        .chat-input-area { padding: 10px; background: white; display: flex; gap: 8px; border-top: 1px solid #ddd; }
+        #input-msg { flex: 1; border-radius: 20px; padding: 10px 15px; background: #f0f2f5; border: none; }
+        .fab { position: absolute; bottom: 20px; right: 20px; width: 56px; height: 56px; background: var(--primary); border-radius: 50%; color: white; font-size: 24px; border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div class="app-container">
         <div id="app-header" class="header hidden">
-            <div class="header-left">
-                <span class="profile-icon">👤</span>
-                <span id="header-user">@user</span>
-            </div>
+            <div class="header-left"><span>👤</span> <span id="header-user">@user</span></div>
             <button class="logout-btn" id="btn-logout">LOGOUT</button>
         </div>
 
         <div id="login-screen" class="screen">
-            <h2 style="text-align:center">Welcome Back</h2>
+            <h2 style="text-align:center">ChatApp Login</h2>
             <input type="email" id="login-email" placeholder="Email">
             <input type="password" id="login-pass" placeholder="Password">
             <button id="btn-login-exec">Masuk</button>
-            <div style="text-align: center;">
-                <button id="btn-goto-reset" class="text-link">Lupa kata sandi?</button>
-            </div>
-            <hr style="width:100%; margin: 20px 0; border: 0; border-top: 1px solid #eee;">
-            <button id="btn-goto-signup" style="background:#34a853">Daftar Akun Baru</button>
-            <p id="login-error" class="err-txt"></p>
-        </div>
-
-        <div id="reset-screen" class="screen hidden">
-            <h2 style="text-align:center">Reset Password</h2>
-            <input type="email" id="reset-email" placeholder="Email Terdaftar">
-            <button id="btn-reset-exec">Kirim Link Reset</button>
-            <button id="btn-back-login-from-reset" class="text-link" style="display: block; margin: 15px auto;">Kembali ke Login</button>
-            <p id="reset-msg" class="err-txt"></p>
+            <button id="btn-goto-signup" style="background:none; color:var(--primary); margin-top:10px">Daftar Akun</button>
         </div>
 
         <div id="signup-screen" class="screen hidden">
-            <h2 style="text-align:center">Daftar Akun</h2>
+            <h2 style="text-align:center">Daftar</h2>
             <input type="email" id="signup-email" placeholder="Email">
-            <input type="password" id="signup-pass" placeholder="Password (min 6)">
+            <input type="password" id="signup-pass" placeholder="Password">
             <button id="btn-signup-exec">Daftar Sekarang</button>
-            <button id="btn-back-login" class="text-link" style="display: block; margin: 15px auto;">Kembali ke Login</button>
-            <p id="signup-error" class="err-txt"></p>
+            <button id="btn-back-login" style="background:none; color:var(--primary); margin-top:10px">Kembali</button>
         </div>
 
         <div id="setup-screen" class="screen hidden">
-            <h3>Set Username Kamu</h3>
-            <input type="text" id="custom-username" placeholder="Contoh: budi_cool">
-            <button id="btn-save-profile">Simpan & Mulai Chat</button>
+            <h3>Set Username</h3>
+            <input type="text" id="custom-username" placeholder="Username...">
+            <button id="btn-save-profile">Simpan</button>
         </div>
 
         <div id="contact-screen" class="screen hidden">
-            <h3 style="margin-top:0">Pesan</h3>
             <div id="list-kontak"></div>
             <button class="fab" id="btn-open-add-contact">+</button>
         </div>
 
         <div id="add-contact-screen" class="screen hidden">
-            <h3>Cari Teman</h3>
-            <input type="text" id="search-friend-id" placeholder="Username Teman...">
-            <button id="btn-add-friend">Cari & Tambah</button>
-            <button id="btn-cancel-add" class="text-link" style="display: block; margin: 15px auto;">Batal</button>
+            <h3>Tambah Teman</h3>
+            <input type="text" id="search-friend-id" placeholder="Username...">
+            <button id="btn-add-friend">Cari</button>
+            <button id="btn-cancel-add" style="background:none; color:red">Batal</button>
         </div>
 
         <div id="chat-screen" class="screen hidden" style="padding:0">
-            <div style="background:#f8f9fa; padding:10px; font-weight:bold; display:flex; align-items:center; gap:10px; border-bottom: 1px solid #ddd; flex-shrink:0;">
-                <button id="btn-back" style="background:none; color:var(--primary); width:auto; padding:5px; margin:0; font-size:18px;">←</button>
+            <div style="background:#eee; padding:10px; display:flex; align-items:center; gap:10px;">
+                <button id="btn-back" style="background:none; color:var(--primary); width:auto; border:none; font-size:20px">←</button>
                 <span id="chat-with-id">@username</span>
             </div>
             <div id="messages-area"></div>
             <div class="chat-input-area">
-                <input type="text" id="input-msg" placeholder="Tulis pesan..." autocomplete="off">
-                <button id="btn-send">➤</button>
+                <input type="text" id="input-msg" placeholder="Ketik pesan..." autocomplete="off">
+                <button id="btn-send" style="width:50px">➤</button>
             </div>
         </div>
     </div>
 
     <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
+    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
     import { getDatabase, ref, set, get, update, push, onChildAdded, onValue, serverTimestamp, query, orderByChild, equalTo, off } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-database.js";
     
     const firebaseConfig = {
@@ -168,6 +126,7 @@
 
     let myData = null;
     let activeRoomId = null;
+    let activeChatWith = null;
 
     function showScreen(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
@@ -196,12 +155,12 @@
 
         onValue(contactRef, (snap) => {
             if(!snap.exists()) {
-                list.innerHTML = "<p style='text-align:center; color:#888;'>Belum ada kontak.</p>";
+                list.innerHTML = "<p style='text-align:center; padding:20px; color:#999'>Belum ada chat.</p>";
                 return;
             }
-
-            const friends = Object.values(snap.val());
-            friends.forEach(friend => {
+            
+            const friends = snap.val();
+            Object.values(friends).forEach(friend => {
                 const roomId = myData.uid < friend.uid ? myData.uid+"_"+friend.uid : friend.uid+"_"+myData.uid;
                 
                 let div = document.getElementById('contact-' + friend.uid);
@@ -209,43 +168,40 @@
                     div = document.createElement('div');
                     div.className = 'contact-item';
                     div.id = 'contact-' + friend.uid;
+                    div.innerHTML = `
+                        <div class="avatar" style="background:hsl(${Math.random()*360}, 70%, 60%)">${friend.username[0].toUpperCase()}</div>
+                        <div class="contact-info">
+                            <b>@${friend.username}</b>
+                            <span class="last-msg" id="last-msg-${roomId}">...</span>
+                        </div>
+                        <div class="unread-badge badge-hidden" id="badge-${roomId}">0</div>
+                    `;
+                    div.onclick = () => startChat(friend);
                     list.appendChild(div);
                 }
 
-                div.innerHTML = `
-                    <div class="avatar">${friend.username[0].toUpperCase()}</div>
-                    <div class="contact-info">
-                        <b>@${friend.username}</b>
-                        <span class="last-msg" id="last-msg-${roomId}">...</span>
-                    </div>
-                    <div class="unread-badge badge-hidden" id="badge-${roomId}">0</div>
-                `;
-                div.onclick = () => startChat(friend);
-
-                // Listener khusus per room chat agar live
+                // Listener Real-time untuk Update List
                 onValue(ref(db, 'messages/' + roomId), (mSnap) => {
-                    const lastMsgEl = document.getElementById('last-msg-' + roomId);
+                    const lastEl = document.getElementById('last-msg-' + roomId);
                     const badgeEl = document.getElementById('badge-' + roomId);
-                    const contactDiv = document.getElementById('contact-' + friend.uid);
-                    
-                    if(mSnap.exists() && lastMsgEl) {
-                        const msgsArr = Object.entries(mSnap.val());
-                        const lastData = msgsArr[msgsArr.length - 1][1];
-                        
-                        lastMsgEl.innerText = lastData.text;
+                    const itemEl = document.getElementById('contact-' + friend.uid);
 
-                        const unreads = msgsArr.filter(([key, m]) => m.sender !== myData.uid && m.status === 'unread');
-                        const count = unreads.length;
+                    if(mSnap.exists() && lastEl) {
+                        const msgs = Object.entries(mSnap.val());
+                        const lastData = msgs[msgs.length - 1][1];
+                        lastEl.innerText = lastData.text;
+
+                        const unreads = msgs.filter(([k, v]) => v.sender !== myData.uid && v.status === 'unread');
                         
-                        if(count > 0) {
-                            badgeEl.innerText = count;
+                        if(unreads.length > 0) {
+                            itemEl.classList.add('is-unread');
+                            badgeEl.innerText = unreads.length;
                             badgeEl.classList.remove('badge-hidden');
-                            lastMsgEl.classList.add('is-unread');
-                            contactDiv.style.order = "-1000000000"; // Paksa ke urutan teratas
+                            itemEl.style.order = "-2000000000000"; 
                         } else {
+                            itemEl.classList.remove('is-unread');
                             badgeEl.classList.add('badge-hidden');
-                            lastMsgEl.classList.remove('is-unread');
-                            contactDiv.style.order = lastData.time ? -Math.floor(lastData.time) : "999";
+                            itemEl.style.order = lastData.time ? -Math.floor(lastData.time) : "0";
                         }
                     }
                 });
@@ -254,6 +210,7 @@
     }
 
     function startChat(friend) {
+        activeChatWith = friend;
         activeRoomId = myData.uid < friend.uid ? myData.uid+"_"+friend.uid : friend.uid+"_"+myData.uid;
         showScreen('chat-screen');
         document.getElementById('chat-with-id').innerText = "@" + friend.username;
@@ -263,36 +220,39 @@
         const msgRef = ref(db, 'messages/' + activeRoomId);
         off(msgRef);
 
-        // Update status ke 'read' secara massal saat buka chat
-        get(msgRef).then((snap) => {
-            if(snap.exists()){
-                const updates = {};
-                snap.forEach(child => {
-                    if(child.val().sender !== myData.uid && child.val().status === 'unread') {
-                        updates[`messages/${activeRoomId}/${child.key}/status`] = 'read';
-                    }
-                });
-                update(ref(db), updates);
-            }
-        });
-
+        // Child Added: Tampilkan Pesan & Pasang Listener Status
         onChildAdded(msgRef, (snap) => {
             const m = snap.val();
-            // Auto-read jika room sedang terbuka
+            const msgId = snap.key;
+
+            // Jika pesan dari lawan masuk & room terbuka, set 'read'
             if(m.sender !== myData.uid && m.status === 'unread') {
-                update(ref(db, `messages/${activeRoomId}/${snap.key}`), { status: 'read' });
+                update(ref(db, `messages/${activeRoomId}/${msgId}`), { status: 'read' });
             }
 
             const div = document.createElement('div');
             div.className = `bubble ${m.sender === myData.uid ? 'me' : 'them'}`;
-            div.innerHTML = `${m.text}<div class="status-dot ${m.status === 'read' ? 'read' : 'unread'}" id="status-${snap.key}"></div>`;
+            div.id = `msg-${msgId}`;
+            
+            // Masukkan Status (Centang)
+            const statusText = m.status === 'read' ? '✓✓' : '✓';
+            const statusClass = m.status === 'read' ? 'read' : 'unread';
+            
+            div.innerHTML = `
+                ${m.text}
+                ${m.sender === myData.uid ? `<span class="status-mark ${statusClass}" id="mark-${msgId}">${statusText}</span>` : ''}
+            `;
+            
             area.appendChild(div);
             area.scrollTop = area.scrollHeight;
 
-            // Update status dot (centang) secara live
-            onValue(ref(db, `messages/${activeRoomId}/${snap.key}/status`), (sSnap) => {
-                const dot = document.getElementById('status-' + snap.key);
-                if(dot) dot.className = `status-dot ${sSnap.val() === 'read' ? 'read' : 'unread'}`;
+            // KUNCI REAL-TIME: Pantau perubahan status di DB
+            onValue(ref(db, `messages/${activeRoomId}/${msgId}/status`), (sSnap) => {
+                const mark = document.getElementById('mark-' + msgId);
+                if(mark && sSnap.val() === 'read') {
+                    mark.innerText = '✓✓';
+                    mark.className = 'status-mark read';
+                }
             });
         });
     }
@@ -302,48 +262,56 @@
         const txt = inp.value.trim();
         if(!txt || !activeRoomId) return;
         inp.value = "";
-        await push(ref(db, 'messages/' + activeRoomId), { 
-            sender: myData.uid, text: txt, time: serverTimestamp(), status: 'unread' 
+
+        // Tambahkan ke kontak penerima secara otomatis jika belum ada
+        // Ini membuat user baru muncul di daftar kontak si penerima
+        const recipientContactRef = ref(db, `contacts/${activeChatWith.uid}/${myData.uid}`);
+        set(recipientContactRef, myData);
+
+        await push(ref(db, 'messages/' + activeRoomId), {
+            sender: myData.uid,
+            text: txt,
+            time: serverTimestamp(),
+            status: 'unread'
         });
     };
 
-    // --- BUTTONS ---
-    document.getElementById('btn-login-exec').onclick = async () => {
-        const email = document.getElementById('login-email').value;
-        const pass = document.getElementById('login-pass').value;
-        try { await signInWithEmailAndPassword(auth, email, pass); } 
-        catch (e) { document.getElementById('login-error').innerText = "Email/Password salah!"; }
-    };
-    document.getElementById('btn-signup-exec').onclick = async () => {
-        const email = document.getElementById('signup-email').value;
-        const pass = document.getElementById('signup-pass').value;
-        try { await createUserWithEmailAndPassword(auth, email, pass); } 
-        catch (e) { document.getElementById('signup-error').innerText = e.message; }
-    };
-    document.getElementById('btn-logout').onclick = () => signOut(auth);
+    // --- Events ---
     document.getElementById('btn-send').onclick = sendMessage;
     document.getElementById('input-msg').onkeypress = (e) => { if(e.key==='Enter') sendMessage(); };
-    document.getElementById('btn-back').onclick = () => { activeRoomId = null; showScreen('contact-screen'); };
-    document.getElementById('btn-goto-reset').onclick = () => showScreen('reset-screen');
-    document.getElementById('btn-back-login-from-reset').onclick = () => showScreen('login-screen');
+    document.getElementById('btn-back').onclick = () => { activeRoomId = null; activeChatWith = null; showScreen('contact-screen'); };
+    document.getElementById('btn-login-exec').onclick = async () => {
+        const e = document.getElementById('login-email').value;
+        const p = document.getElementById('login-pass').value;
+        try { await signInWithEmailAndPassword(auth, e, p); } catch(err) { alert("Login Gagal"); }
+    };
+    document.getElementById('btn-signup-exec').onclick = async () => {
+        const e = document.getElementById('signup-email').value;
+        const p = document.getElementById('signup-pass').value;
+        try { await createUserWithEmailAndPassword(auth, e, p); } catch(err) { alert(err.message); }
+    };
+    document.getElementById('btn-logout').onclick = () => signOut(auth);
     document.getElementById('btn-goto-signup').onclick = () => showScreen('signup-screen');
     document.getElementById('btn-back-login').onclick = () => showScreen('login-screen');
     document.getElementById('btn-open-add-contact').onclick = () => showScreen('add-contact-screen');
     document.getElementById('btn-cancel-add').onclick = () => showScreen('contact-screen');
+    
     document.getElementById('btn-add-friend').onclick = async () => {
         const target = document.getElementById('search-friend-id').value.trim().toLowerCase();
         const q = query(ref(db, 'users'), orderByChild('username'), equalTo(target));
         const snap = await get(q);
         if(snap.exists()) {
             const friend = Object.values(snap.val())[0];
-            if(friend.uid === myData.uid) return alert("Gabisa tambah diri sendiri!");
+            if(friend.uid === myData.uid) return alert("Itu akun kamu sendiri!");
+            // Simpan kontak di sisi saya
             await set(ref(db, `contacts/${myData.uid}/${friend.uid}`), friend);
             showScreen('contact-screen');
-        } else { alert("User tidak ditemukan!"); }
+        } else { alert("User tidak ditemukan"); }
     };
+
     document.getElementById('btn-save-profile').onclick = async () => {
         const userIn = document.getElementById('custom-username').value.trim().toLowerCase();
-        if(!userIn || userIn.length < 3) return alert("Username minimal 3 karakter");
+        if(userIn.length < 3) return alert("Username kependekan!");
         myData = { uid: auth.currentUser.uid, username: userIn, email: auth.currentUser.email };
         await set(ref(db, 'users/' + auth.currentUser.uid), myData);
         showScreen('contact-screen');
