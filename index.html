@@ -8,7 +8,258 @@
         * { box-sizing: border-box; }
         :root { 
             --dark-bg: #0b141a; 
-            --dark-panel: #111b21; 
+            --dark-panel: #111b21; <!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KIWKIW Chat Live</title>
+    <style>
+        * { box-sizing: border-box; }
+        :root { 
+            --dark-bg: #0b141a; --dark-panel: #111b21; --dark-header: #202c33; 
+            --wa-green: #00a884; --wa-blue: #53bdeb; --text-main: #e9edef;
+            --text-muted: #8696a0; --me-bubble: #005c4b; --them-bubble: #202c33;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: #000; margin: 0; color: var(--text-main); display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .app-container { width: 100%; max-width: 450px; height: 100vh; background: var(--dark-bg); display: flex; flex-direction: column; position: relative; overflow: hidden; }
+        @media (min-width: 451px) { .app-container { height: 95vh; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); } }
+        .header { background: var(--dark-header); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; z-index: 10; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .app-title { color: var(--wa-green); font-weight: bold; font-size: 18px; }
+        .screen { flex: 1; display: flex; flex-direction: column; overflow-y: auto; position: relative; }
+        .hidden { display: none !important; }
+        .auth-form { padding: 30px; display: flex; flex-direction: column; gap: 15px; }
+        input { background: #2a3942; border: none; padding: 12px 15px; border-radius: 8px; color: white; outline: none; }
+        button { background: var(--wa-green); color: #0b141a; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .contact-item { display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid #222d34; cursor: pointer; }
+        .avatar { width: 48px; height: 48px; background: #6a7175; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; }
+        .contact-info { flex: 1; min-width: 0; }
+        .last-msg { font-size: 13px; color: var(--text-muted); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .unread-badge { background: var(--wa-green); color: #0b141a; font-size: 12px; font-weight: bold; min-width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        #messages-area { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; }
+        .bubble { padding: 8px 12px; border-radius: 8px; margin-bottom: 4px; max-width: 80%; font-size: 14px; position: relative; }
+        .bubble.me { align-self: flex-end; background: var(--me-bubble); }
+        .bubble.them { align-self: flex-start; background: var(--them-bubble); }
+        .msg-time { font-size: 10px; opacity: 0.6; margin-left: 5px; }
+        .chat-input-area { background: var(--dark-header); padding: 10px; display: flex; gap: 8px; }
+        #input-msg { background: #2a3942; border-radius: 20px; flex: 1; padding: 10px 15px; border: none; color: white; }
+        .fab { position: absolute; bottom: 20px; right: 20px; width: 50px; height: 50px; background: var(--wa-green); border-radius: 50%; border: none; color: #0b141a; font-size: 24px; cursor: pointer; }
+        .mark-read { color: var(--wa-blue); }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div id="app-header" class="header hidden">
+            <span class="app-title">KiwKiw Talk</span>
+            <button id="btn-logout" style="background:none; border:none; color:red;">LOGOUT</button>
+        </div>
+
+        <div id="login-screen" class="screen auth-form">
+            <input type="email" id="login-email" placeholder="Email">
+            <input type="password" id="login-pass" placeholder="Password">
+            <button id="btn-login-exec">LOGIN</button>
+            <button id="btn-goto-signup" style="background:none; color:var(--wa-green)">Daftar Baru</button>
+        </div>
+
+        <div id="signup-screen" class="screen hidden auth-form">
+            <input type="email" id="signup-email" placeholder="Email">
+            <input type="password" id="signup-pass" placeholder="Password">
+            <button id="btn-signup-exec">DAFTAR</button>
+        </div>
+
+        <div id="setup-screen" class="screen hidden auth-form">
+            <input type="text" id="custom-username" placeholder="Username Anda">
+            <button id="btn-save-profile">SIMPAN</button>
+        </div>
+
+        <div id="contact-screen" class="screen hidden">
+            <div id="list-kontak"></div>
+            <button class="fab" id="btn-open-add-contact">+</button>
+        </div>
+
+        <div id="add-contact-screen" class="screen hidden auth-form">
+            <input type="text" id="search-friend-id" placeholder="Cari Username...">
+            <button id="btn-add-friend">CHAT</button>
+            <button id="btn-cancel-add" style="background:none; color:gray">BATAL</button>
+        </div>
+
+        <div id="chat-screen" class="screen hidden">
+            <div style="background:var(--dark-header); padding:10px; display:flex; align-items:center; gap:10px;">
+                <button id="btn-back" style="background:none; border:none; color:var(--wa-green); font-size:20px">←</button>
+                <b id="chat-with-id"></b>
+            </div>
+            <div id="messages-area"></div>
+            <div class="chat-input-area">
+                <input type="text" id="input-msg" placeholder="Ketik pesan...">
+                <button id="btn-send">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
+        import { getDatabase, ref, set, get, update, push, onChildAdded, onValue, serverTimestamp, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAPXhs0feUYRm_KSzK3YdlKrsgFcSDRpX4",
+            authDomain: "chattingapp-8734b.firebaseapp.com",
+            databaseURL: "https://chattingapp-8734b-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "chattingapp-8734b",
+            appId: "1:811918487671:web:060e9b245e843410525672"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        let myData = null;
+        let activeRoomId = null;
+        let activeChatWith = null;
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const snap = await get(ref(db, 'users/' + user.uid));
+                if (snap.exists()) {
+                    myData = snap.val();
+                    showScreen('contact-screen');
+                    document.getElementById('app-header').classList.remove('hidden');
+                    loadMyContacts();
+                } else { showScreen('setup-screen'); }
+            } else {
+                showScreen('login-screen');
+                document.getElementById('app-header').classList.add('hidden');
+            }
+        });
+
+        // --- CORE LOGIC: LIVE CONTACT LIST ---
+        function loadMyContacts() {
+            const list = document.getElementById('list-kontak');
+            const contactRef = ref(db, 'contacts/' + myData.uid);
+
+            onValue(contactRef, (snap) => {
+                if(!snap.exists()) return;
+                const friends = snap.val();
+
+                Object.values(friends).forEach(friend => {
+                    const roomId = myData.uid < friend.uid ? myData.uid+"_"+friend.uid : friend.uid+"_"+myData.uid;
+                    
+                    // Gunakan ID unik agar elemen tidak duplikat saat update
+                    let div = document.getElementById('item-' + roomId);
+                    if (!div) {
+                        div = document.createElement('div');
+                        div.id = 'item-' + roomId;
+                        div.className = 'contact-item';
+                        div.onclick = () => startChat(friend);
+                        list.appendChild(div);
+                    }
+
+                    // MONITOR PESAN SECARA REAL-TIME UNTUK TIAP KONTAK
+                    onValue(ref(db, 'messages/' + roomId), (mSnap) => {
+                        let lastText = "Belum ada pesan";
+                        let unread = 0;
+
+                        if(mSnap.exists()) {
+                            const msgs = Object.values(mSnap.val());
+                            const lastMsg = msgs[msgs.length - 1];
+                            lastText = (lastMsg.sender === myData.uid ? "Anda: " : "") + lastMsg.text;
+                            unread = msgs.filter(v => v.sender !== myData.uid && v.status === 'unread').length;
+                            
+                            // EFEK LIVE: Pindahkan ke urutan teratas
+                            list.prepend(div);
+                        }
+
+                        div.innerHTML = `
+                            <div class="avatar">${friend.username[0].toUpperCase()}</div>
+                            <div class="contact-info">
+                                <b>${friend.username}</b>
+                                <span class="last-msg">${lastText}</span>
+                            </div>
+                            <div class="unread-badge ${unread > 0 ? '' : 'hidden'}">${unread}</div>
+                        `;
+                    });
+                });
+            });
+        }
+
+        function startChat(friend) {
+            activeChatWith = friend;
+            activeRoomId = myData.uid < friend.uid ? myData.uid+"_"+friend.uid : friend.uid+"_"+myData.uid;
+            showScreen('chat-screen');
+            document.getElementById('chat-with-id').innerText = friend.username;
+            const area = document.getElementById('messages-area');
+            area.innerHTML = "";
+
+            // Gunakan onChildAdded agar hanya pesan baru yang di-append, bukan gambar ulang semua
+            onChildAdded(ref(db, 'messages/' + activeRoomId), (snap) => {
+                const m = snap.val();
+                if(m.sender !== myData.uid && m.status === 'unread') {
+                    update(ref(db, `messages/${activeRoomId}/${snap.key}`), { status: 'read' });
+                }
+                const div = document.createElement('div');
+                div.className = `bubble ${m.sender === myData.uid ? 'me' : 'them'}`;
+                div.innerHTML = `${m.text} <span class="msg-time">✓</span>`;
+                area.appendChild(div);
+                area.scrollTop = area.scrollHeight;
+            });
+        }
+
+        const sendMessage = async () => {
+            const inp = document.getElementById('input-msg');
+            const txt = inp.value.trim();
+            if(!txt || !activeChatWith) return;
+            inp.value = "";
+            
+            // Pastikan data kontak terupdate di kedua belah pihak agar muncul di list
+            set(ref(db, `contacts/${activeChatWith.uid}/${myData.uid}`), myData);
+            set(ref(db, `contacts/${myData.uid}/${activeChatWith.uid}`), activeChatWith);
+
+            await push(ref(db, 'messages/' + activeRoomId), {
+                sender: myData.uid,
+                text: txt,
+                time: serverTimestamp(),
+                status: 'unread'
+            });
+        };
+
+        // Event Listeners
+        document.getElementById('btn-send').onclick = sendMessage;
+        document.getElementById('btn-back').onclick = () => showScreen('contact-screen');
+        document.getElementById('btn-login-exec').onclick = async () => {
+            try { await signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value); } catch(e) { alert(e.message); }
+        };
+        document.getElementById('btn-signup-exec').onclick = async () => {
+            try { await createUserWithEmailAndPassword(auth, document.getElementById('signup-email').value, document.getElementById('signup-pass').value); } catch(e) { alert(e.message); }
+        };
+        document.getElementById('btn-logout').onclick = () => signOut(auth);
+        document.getElementById('btn-goto-signup').onclick = () => showScreen('signup-screen');
+        document.getElementById('btn-open-add-contact').onclick = () => showScreen('add-contact-screen');
+        document.getElementById('btn-cancel-add').onclick = () => showScreen('contact-screen');
+        document.getElementById('btn-save-profile').onclick = async () => {
+            const username = document.getElementById('custom-username').value.trim().toLowerCase();
+            myData = { uid: auth.currentUser.uid, username, email: auth.currentUser.email };
+            await set(ref(db, 'users/' + auth.currentUser.uid), myData);
+            showScreen('contact-screen');
+        };
+        document.getElementById('btn-add-friend').onclick = async () => {
+            const target = document.getElementById('search-friend-id').value.trim().toLowerCase();
+            const q = query(ref(db, 'users'), orderByChild('username'), equalTo(target));
+            const snap = await get(q);
+            if(snap.exists()) {
+                const friend = Object.values(snap.val())[0];
+                await set(ref(db, `contacts/${myData.uid}/${friend.uid}`), friend);
+                startChat(friend);
+            } else { alert("User tidak ditemukan"); }
+        };
+    </script>
+</body>
+</html>
             --dark-header: #202c33; 
             --wa-green: #00a884; 
             --wa-blue: #53bdeb; 
