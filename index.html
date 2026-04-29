@@ -35,7 +35,7 @@
         button { background: var(--wa-green); color: #0b141a; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
 
         /* List Kontak */
-        .contact-item { display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid #222d34; cursor: pointer; }
+        .contact-item { display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid #222d34; cursor: pointer; transition: background 0.2s; }
         .contact-item:hover { background: #202c33; }
         .avatar { width: 48px; height: 48px; background: #6a7175; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; flex-shrink: 0; }
         .contact-info { flex: 1; min-width: 0; }
@@ -63,6 +63,7 @@
         <div id="app-header" class="header hidden">
             <div class="header-left">
                 <span class="app-title">KiwKiw Talk</span>
+                <span id="digital-clock" style="font-size: 11px; color: var(--text-muted); margin-left: 10px;"></span>
             </div>
             <button id="btn-logout" style="background:none; border:none; color:red; font-size:10px">LOGOUT</button>
         </div>
@@ -89,7 +90,7 @@
         </div>
 
         <div id="contact-screen" class="screen hidden">
-            <div id="list-kontak"></div>
+            <div id="list-kontak" style="display: flex; flex-direction: column;"></div>
             <button class="fab" id="btn-open-add-contact">➕</button>
         </div>
 
@@ -136,7 +137,8 @@
     let activeChatWith = null;
 
     setInterval(() => {
-        document.getElementById('digital-clock').innerText = new Date().toLocaleTimeString('id-ID');
+        const clockEl = document.getElementById('digital-clock');
+        if(clockEl) clockEl.innerText = new Date().toLocaleTimeString('id-ID');
     }, 1000);
 
     function showScreen(id) {
@@ -169,34 +171,44 @@
                 const roomId = myData.uid < friend.uid ? myData.uid+"_"+friend.uid : friend.uid+"_"+myData.uid;
                 const div = document.createElement('div');
                 div.className = 'contact-item';
-                div.id = 'contact-' + friend.uid;
+                div.id = 'contact-item-' + roomId;
                 div.innerHTML = `
                     <div class="avatar">${friend.username[0].toUpperCase()}</div>
                     <div class="contact-info">
                         <b>${friend.username}</b>
-                        <span class="last-msg" id="last-msg-${roomId}">...</span>
+                        <span class="last-msg" id="last-msg-${roomId}">Memuat pesan...</span>
                     </div>
                     <div class="unread-badge hidden" id="badge-${roomId}">0</div>
                 `;
                 div.onclick = () => startChat(friend);
-                list.prepend(div);
+                list.appendChild(div);
 
-                // DITEKANKAN: Selalu ambil pesan terakhir (kita atau lawan)
+                // DITEKANKAN: Selalu ambil pesan terakhir secara real-time
                 onValue(ref(db, 'messages/' + roomId), (mSnap) => {
                     if(mSnap.exists()) {
                         const msgs = Object.values(mSnap.val());
                         const lastMsg = msgs[msgs.length - 1];
                         
-                        // Menampilkan teks pesan terakhir siapa saja yang kirim
+                        // Prefiks "Anda: " jika kita pengirimnya, jika bukan tampilkan langsung
                         const prefix = lastMsg.sender === myData.uid ? "Anda: " : "";
-                        document.getElementById('last-msg-' + roomId).innerText = prefix + lastMsg.text;
+                        const lastMsgElement = document.getElementById('last-msg-' + roomId);
+                        if(lastMsgElement) lastMsgElement.innerText = prefix + lastMsg.text;
 
+                        // Hitung unread
                         const unreads = msgs.filter(v => v.sender !== myData.uid && v.status === 'unread');
                         const b = document.getElementById('badge-' + roomId);
-                        if(unreads.length > 0) {
-                            b.innerText = unreads.length;
-                            b.classList.remove('hidden');
-                        } else { b.classList.add('hidden'); }
+                        if(b) {
+                            if(unreads.length > 0) {
+                                b.innerText = unreads.length;
+                                b.classList.remove('hidden');
+                            } else {
+                                b.classList.add('hidden');
+                            }
+                        }
+                        
+                        // Re-order: pindahkan yang ada chat terbaru ke atas
+                        const item = document.getElementById('contact-item-' + roomId);
+                        if(item) list.prepend(item);
                     }
                 });
             });
@@ -252,7 +264,6 @@
         if(!txt || !activeChatWith) return;
         inp.value = "";
 
-        // Auto-add contact untuk kedua belah pihak
         set(ref(db, `contacts/${activeChatWith.uid}/${myData.uid}`), myData);
         set(ref(db, `contacts/${myData.uid}/${activeChatWith.uid}`), activeChatWith);
 
@@ -266,7 +277,10 @@
 
     document.getElementById('btn-send').onclick = sendMessage;
     document.getElementById('input-msg').onkeypress = (e) => { if(e.key==='Enter') sendMessage(); };
-    document.getElementById('btn-back').onclick = () => showScreen('contact-screen');
+    document.getElementById('btn-back').onclick = () => {
+        activeRoomId = null;
+        showScreen('contact-screen');
+    };
     document.getElementById('btn-login-exec').onclick = async () => {
         const e = document.getElementById('login-email').value;
         const p = document.getElementById('login-pass').value;
